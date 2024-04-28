@@ -1,0 +1,113 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_ITEMS 100
+#define MAX_STRING_LENGTH 1000
+
+// Estrutura para representar um artefato
+typedef struct {
+    char nome[MAX_STRING_LENGTH];
+    char tipo[MAX_STRING_LENGTH];
+    char localizacao[MAX_STRING_LENGTH];
+    char descricao[MAX_STRING_LENGTH];
+} Artefato;
+
+// Função para ler os artefatos de um arquivo e armazená-los em uma lista
+int lerArtefatos(Artefato artefatos[], const char *nomeArquivo) {
+    FILE *arquivo = fopen(nomeArquivo, "r");
+    if (arquivo == NULL) {
+        printf("Falha de inicialização: O arquivo de registro de artefatos está corrompido ou inacessível.\n");
+        return 0;
+    }
+
+    int numArtefatos = 0;
+    char linha[MAX_STRING_LENGTH];
+
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        if (strcmp(linha, "==========\n") == 0) {
+            numArtefatos++;
+            continue;
+        }
+
+        if (numArtefatos >= MAX_ITEMS) {
+            printf("Aviso de sobrecarga de dados: A capacidade máxima de armazenamento de artefatos foi atingida.\n");
+            break;
+        }
+
+        linha[strcspn(linha, "\n")] = '\0';
+
+        switch (numArtefatos % 4) {
+            case 0:
+                strncpy(artefatos[numArtefatos].nome, linha, sizeof(artefatos[numArtefatos].nome));
+                break;
+            case 1:
+                strncpy(artefatos[numArtefatos].tipo, linha, sizeof(artefatos[numArtefatos].tipo));
+                break;
+            case 2:
+                strncpy(artefatos[numArtefatos].localizacao, linha, sizeof(artefatos[numArtefatos].localizacao));
+                break;
+            case 3:
+                strncpy(artefatos[numArtefatos].descricao, linha, sizeof(artefatos[numArtefatos].descricao));
+                break;
+        }
+    }
+
+    fclose(arquivo);
+    return numArtefatos;
+}
+
+// Função para remover um artefato da lista com base no nome
+int removerArtefato(Artefato artefatos[], int *numArtefatos, const char *nomeArtefato) {
+    int encontrado = 0;
+    for (int i = 0; i < *numArtefatos; i++) {
+        if (strcmp(artefatos[i].nome, nomeArtefato) == 0) {
+            encontrado = 1;
+            // Removendo o artefato da lista e ajustando os índices
+            for (int j = i; j < *numArtefatos - 1; j++) {
+                strncpy(artefatos[j].nome, artefatos[j + 1].nome, sizeof(artefatos[j].nome));
+                strncpy(artefatos[j].tipo, artefatos[j + 1].tipo, sizeof(artefatos[j].tipo));
+                strncpy(artefatos[j].localizacao, artefatos[j + 1].localizacao, sizeof(artefatos[j].localizacao));
+                strncpy(artefatos[j].descricao, artefatos[j + 1].descricao, sizeof(artefatos[j].descricao));
+            }
+            (*numArtefatos)--;
+            printf("O artefato \"%s\" foi removido com sucesso. A estabilidade do continuum espaço-tempo foi restaurada.\n", nomeArtefato);
+            break;
+        }
+    }
+    if (!encontrado) {
+        printf("Atenção: Não foi possível localizar o artefato \"%s\" na base de dados.\n", nomeArtefato);
+    }
+    return encontrado;
+}
+
+int main() {
+    Artefato artefatos[MAX_ITEMS];
+    int numArtefatos = lerArtefatos(artefatos, "registro_artefatos.txt");
+
+    if (numArtefatos == 0) {
+        printf("Alerta de segurança: A matriz de artefatos está vazia. Inicie o procedimento de recuperação imediatamente.\n");
+        return 1;
+    }
+
+    printf("== Base de Dados de Artefatos ==\n");
+    for (int i = 0; i < numArtefatos; i++) {
+        printf("Nome: %s\n", artefatos[i].nome);
+        printf("Tipo: %s\n", artefatos[i].tipo);
+        printf("Localização: %s\n", artefatos[i].localizacao);
+        printf("Descrição: %s\n", artefatos[i].descricao);
+        printf("------------------------------\n");
+    }
+
+    removerArtefato(artefatos, &numArtefatos, "Chave de Portal Estelar");
+    printf("\n== Artefatos Restantes ==\n");
+    for (int i = 0; i < numArtefatos; i++) {
+        printf("Nome: %s\n", artefatos[i].nome);
+        printf("Tipo: %s\n", artefatos[i].tipo);
+        printf("Localização: %s\n", artefatos[i].localizacao);
+        printf("Descrição: %s\n", artefatos[i].descricao);
+        printf("------------------------------\n");
+    }
+
+    return 0;
+}
